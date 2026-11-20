@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { guessMapping, parseText, rowsToLeads, type ParsedSheet } from "@/lib/csv";
+import { FREE_LIMIT } from "@/lib/plan";
+import { checkKeyOnline, loadLicense, removeLicense, type StoredLicense } from "@/lib/pro";
 import { SAMPLE_SETTINGS, sampleCsv } from "@/lib/sample";
 import { scoreLeads } from "@/lib/scoring";
 import { clearState, loadState, saveState } from "@/lib/storage";
@@ -9,6 +11,7 @@ import { DEFAULT_SETTINGS, type ColumnMapping, type Lead, type ProjectSettings }
 import { ImportPanel } from "./ImportPanel";
 import { LeadList } from "./LeadList";
 import { SetupStep } from "./SetupStep";
+import { UpgradeDialog } from "./UpgradeDialog";
 
 interface Pending {
   sheet: ParsedSheet;
@@ -22,6 +25,8 @@ function samplePending(): Pending {
 }
 
 interface Initial {
+  upgrade: boolean;
+  license: StoredLicense | null;
   leads: Lead[];
   settings: ProjectSettings;
   pending: Pending | null;
@@ -30,11 +35,15 @@ interface Initial {
 /** Runs once in the browser: restores the saved list, or starts the sample when the link asks for it. */
 function initialState(): Initial {
   const saved = loadState();
-  const wantsSample = new URLSearchParams(window.location.search).get("sample") === "1";
+  const params = new URLSearchParams(window.location.search);
+  const wantsSample = params.get("sample") === "1";
+  const upgrade = params.get("upgrade") === "1";
+  const stored = loadLicense();
+  const license = stored && stored.expiresAt > Date.now() ? stored : null;
   if (wantsSample && saved.leads.length === 0) {
-    return { leads: [], settings: SAMPLE_SETTINGS, pending: samplePending() };
+    return { upgrade, license, leads: [], settings: SAMPLE_SETTINGS, pending: samplePending() };
   }
-  return { leads: saved.leads, settings: saved.settings, pending: null };
+  return { upgrade, license, leads: saved.leads, settings: saved.settings, pending: null };
 }
 
 /** Client only (see LeadApp), so browser storage can be read while the first state is created. */
@@ -43,6 +52,8 @@ export default function LeadWorkspace() {
   const [leads, setLeads] = useState<Lead[]>(initial.leads);
   const [settings, setSettings] = useState<ProjectSettings>(initial.settings);
   const [pending, setPending] = useState<Pending | null>(initial.pending);
+  const [license, setLicense] = useState<StoredLicense | null>(initial.license);
+  const [showUpgrade, setShowUpgrade] = useState(initial.upgrade && !initial.license);
   const [importing, setImporting] = useState(false);
   const [saveFailed, setSaveFailed] = useState(false);
   // Scores depend on how old an enquiry is, so "now" is fixed per session to keep ranks from shuffling mid-call.
@@ -63,7 +74,29 @@ export default function LeadWorkspace() {
     return () => window.clearTimeout(timer);
   }, [leads, settings]);
 
-  const scored = useMemo(() => scoreLeads(leads, settings, now), [leads, settings, now]);
+  // A stored key is re-checked with the server. Only a clear "no" removes it; a dead connection never does.
+  useEffect(() => {
+    if (!initial.license) return;
+    let cancelled = false;
+    void checkKeyOnline(initial.license.key).then((result) => {
+      if (cancelled) return;
+      if (result.status === "invalid") {
+        removeLicense();
+        setLicense(null);
+      } else if (result.status === "valid") {
+        setLicense({ key: initial.license!.key, expiresAt: result.expiresAt });
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [initial.license]);
+
+  const isPro = license !== null;
+  const allScored = useMemo(() => scoreLeads(leads, settings, now), [leads, settings, now]);
+  // The free plan shows the best-ranked leads; the rest are ranked too and unlock with Pro.
+  const scored = useMemo(() => (isPro ? allScored : allScored.slice(0, FREE_LIMIT)), [allScored, isPro]);
+  const hiddenCount = allScored.length - scored.length;
 
   const updateLead = useCallback((id: string, patch: Partial<Lead>) => {
     setLeads((all) => all.map((l) => (l.id === id ? { ...l, ...patch } : l)));
@@ -129,6 +162,10 @@ export default function LeadWorkspace() {
     body = (
       <LeadList
         scored={scored}
+        hiddenCount={hiddenCount}
+        isPro={isPro}
+        proUntil={license?.expiresAt ?? null}
+        onUpgrade={() => setShowUpgrade(true)}
         settings={settings}
         saveFailed={saveFailed}
         onSettings={setSettings}
@@ -143,5 +180,15 @@ export default function LeadWorkspace() {
     );
   }
 
-  return body;
+  return (
+    <>
+      {body}
+      <UpgradeDialog
+        open={showUpgrade}
+        hiddenCount={hiddenCount}
+        onClose={() => setShowUpgrade(false)}
+        onUnlocked={(next) => setLicense(next)}
+      />
+    </>
+  );
 }

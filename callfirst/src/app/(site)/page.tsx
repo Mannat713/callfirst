@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ButtonLink } from "@/components/ui";
 import { POSTS } from "@/content/posts";
+import { FREE_LIMIT, PLAN_DAYS, PRICE_LABEL, PRO_LIMIT } from "@/lib/plan";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/site";
 
 const PREVIEW = [
@@ -30,7 +31,8 @@ const FAQ = [
   ["Which files does it accept?", "CSV files up to 8 MB and 5,000 leads, or rows pasted from Excel or Google Sheets. If you have an .xlsx file, save it as CSV first."],
   ["How is the score worked out?", "Two parts. Intent looks at how recent the enquiry is, what the buyer wrote and where they came from. Fit compares budget, configuration and city with your project. The app shows the reasons beside every lead."],
   ["Does it use AI to score leads?", "No. Scoring uses fixed rules, so the same file always gives the same order and every rank can be explained."],
-  ["What does it cost?", "CallFirst is free to use."],
+  ["What does it cost?", `Free for the top ${FREE_LIMIT} leads of any list. Pro is ${PRICE_LABEL} for ${PLAN_DAYS} days and unlocks every lead, up to ${PRO_LIMIT.toLocaleString("en-IN")} per import.`],
+  ["How do I pay?", "By UPI, card or net banking through Razorpay. You get a licence key straight away that restores Pro on any device. Your lead file is never part of the payment."],
 ];
 
 export default function Home() {
@@ -43,7 +45,10 @@ export default function Home() {
       applicationCategory: "BusinessApplication",
       operatingSystem: "Web",
       description: SITE_DESCRIPTION,
-      offers: { "@type": "Offer", price: "0", priceCurrency: "INR" },
+      offers: [
+        { "@type": "Offer", name: "Free", price: "0", priceCurrency: "INR" },
+        { "@type": "Offer", name: "Pro", price: "499", priceCurrency: "INR" },
+      ],
     },
     {
       "@context": "https://schema.org",
@@ -73,7 +78,7 @@ export default function Home() {
             <ButtonLink href="/app" size="lg">Rank my leads</ButtonLink>
             <ButtonLink href="/app?sample=1" size="lg" kind="secondary">Try with sample leads</ButtonLink>
           </div>
-          <p className="mt-4 text-sm text-muted">Free. No sign-up. Your file never leaves your browser.</p>
+          <p className="mt-4 text-sm text-muted">Free for your top {FREE_LIMIT} leads. No sign-up. Your file never leaves your browser.</p>
         </div>
 
         <div className="rounded-3xl border border-line bg-surface p-4 shadow-[0_30px_80px_-30px_rgba(20,23,26,0.25)] sm:p-5" aria-label="Example of a ranked call list">
@@ -153,6 +158,39 @@ export default function Home() {
               </div>
             ))}
           </div>
+        </div>
+      </section>
+
+      <section id="pricing" className="scroll-mt-20 border-y border-line bg-surface">
+        <div className="mx-auto max-w-4xl px-5 py-20">
+          <h2 className="text-center text-3xl font-semibold tracking-tight sm:text-4xl">Simple pricing</h2>
+          <p className="mx-auto mt-3 max-w-xl text-center text-lg text-muted">Start free. Pay once when your lists outgrow it.</p>
+          <div className="mt-10 grid gap-5 md:grid-cols-2">
+            <div className="rounded-2xl border border-line bg-paper p-7">
+              <h3 className="text-lg font-semibold">Free</h3>
+              <p className="mt-2 text-4xl font-semibold tracking-tight">₹0</p>
+              <ul className="mt-5 space-y-2.5 text-muted">
+                {[`Your top ${FREE_LIMIT} ranked leads`, "Reasons for every rank", "Call status, notes and WhatsApp drafts", "CSV export of the leads you see"].map((t) => (
+                  <li key={t} className="flex gap-2"><span className="text-accent" aria-hidden="true">✓</span>{t}</li>
+                ))}
+              </ul>
+              <ButtonLink href="/app" kind="secondary" className="mt-7 w-full">Start free</ButtonLink>
+            </div>
+            <div className="rounded-2xl border-2 border-accent bg-surface p-7 shadow-[0_20px_60px_-30px_rgba(14,122,83,0.5)]">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold">Pro</h3>
+                <span className="rounded-full bg-accent-soft px-2.5 py-0.5 text-xs font-medium text-accent-strong">One payment</span>
+              </div>
+              <p className="mt-2 text-4xl font-semibold tracking-tight">{PRICE_LABEL}<span className="ml-2 text-base font-normal text-muted">for {PLAN_DAYS} days</span></p>
+              <ul className="mt-5 space-y-2.5 text-muted">
+                {["Every lead ranked and unlocked", `Up to ${PRO_LIMIT.toLocaleString("en-IN")} leads per import`, "Full ranked list in your CSV export", "Licence key restores Pro on any device"].map((t) => (
+                  <li key={t} className="flex gap-2"><span className="text-accent" aria-hidden="true">✓</span>{t}</li>
+                ))}
+              </ul>
+              <ButtonLink href="/app?upgrade=1" className="mt-7 w-full">Get Pro</ButtonLink>
+            </div>
+          </div>
+          <p className="mt-6 text-center text-sm text-muted">Pay by UPI, card or net banking via Razorpay. No subscription, no auto-renewal.</p>
         </div>
       </section>
 

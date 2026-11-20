@@ -28,6 +28,10 @@ const PAGE = 100;
 
 interface Props {
   scored: ScoredLead[];
+  hiddenCount: number;
+  isPro: boolean;
+  proUntil: number | null;
+  onUpgrade: () => void;
   settings: ProjectSettings;
   saveFailed: boolean;
   onSettings: (next: ProjectSettings) => void;
@@ -47,7 +51,7 @@ function useDialog(open: boolean) {
   return ref;
 }
 
-export function LeadList({ scored, settings, saveFailed, onSettings, onUpdate, onAddMore, onClear }: Props) {
+export function LeadList({ scored, hiddenCount, isPro, proUntil, onUpgrade, settings, saveFailed, onSettings, onUpdate, onAddMore, onClear }: Props) {
   const [bucket, setBucket] = useState<Bucket | "all">("all");
   const [status, setStatus] = useState<LeadStatus | "all">("all");
   const [query, setQuery] = useState("");
@@ -96,7 +100,12 @@ export function LeadList({ scored, settings, saveFailed, onSettings, onUpdate, o
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="text-sm text-muted">
-            {scored.length.toLocaleString("en-IN")} leads · {done.toLocaleString("en-IN")} worked
+            {(scored.length + hiddenCount).toLocaleString("en-IN")} leads · {done.toLocaleString("en-IN")} worked
+            {isPro && proUntil ? (
+              <span className="ml-2 rounded-full bg-accent-soft px-2 py-0.5 text-xs font-medium text-accent-strong">
+                Pro until {new Date(proUntil).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+              </span>
+            ) : null}
           </p>
           <h1 className="text-2xl font-semibold tracking-tight">{settings.projectName.trim() || "Your call list"}</h1>
         </div>
@@ -113,6 +122,14 @@ export function LeadList({ scored, settings, saveFailed, onSettings, onUpdate, o
         </div>
       </div>
 
+      {hiddenCount > 0 ? (
+        <div role="status" className="mt-4 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-accent/30 bg-accent-soft px-4 py-3 text-sm text-accent-strong">
+          <p>
+            <strong>{hiddenCount.toLocaleString("en-IN")} more leads</strong> are ranked and hidden. The free plan shows your top {scored.length}.
+          </p>
+          <Button size="sm" onClick={onUpgrade}>Unlock all leads</Button>
+        </div>
+      ) : null}
       {saveFailed ? (
         <p role="alert" className="mt-4 rounded-lg border border-warn/20 bg-warn-soft px-4 py-3 text-sm text-warn">
           Your browser would not save this list, so it will be lost when you close the tab. Export a CSV to keep your work.
@@ -197,6 +214,13 @@ export function LeadList({ scored, settings, saveFailed, onSettings, onUpdate, o
           ))}
         </ol>
       )}
+      {hiddenCount > 0 && filtered.length <= shown ? (
+        <div className="mt-4 rounded-2xl border border-dashed border-accent/40 bg-surface px-6 py-8 text-center">
+          <p className="font-semibold">{hiddenCount.toLocaleString("en-IN")} more ranked leads are locked</p>
+          <p className="mt-1 text-sm text-muted">They are scored and sorted. Unlock them to see who is next after these.</p>
+          <Button className="mt-4" onClick={onUpgrade}>Unlock all leads</Button>
+        </div>
+      ) : null}
       {filtered.length > shown ? (
         <div className="mt-4 text-center">
           <Button kind="secondary" onClick={() => setShown((n) => n + PAGE)}>Show {Math.min(PAGE, filtered.length - shown)} more</Button>

@@ -10,7 +10,7 @@ export default function Privacy() {
   return (
     <div className="mx-auto max-w-2xl px-5 py-14">
       <h1 className="text-4xl font-semibold tracking-tight">Privacy</h1>
-      <p className="mt-3 text-muted">Last updated 20 November 2026</p>
+      <p className="mt-3 text-muted">Last updated 21 November 2026</p>
       <div className="mt-8 space-y-5 text-lg leading-relaxed">
         <h2 className="text-2xl font-semibold tracking-tight">Your leads stay on your device</h2>
         <p>
@@ -25,6 +25,12 @@ export default function Privacy() {
         <p>
           The Call and WhatsApp buttons open your phone dialler or WhatsApp with that one lead&apos;s number. From that point the
           call or message is handled by your phone or by WhatsApp, under their terms.
+        </p>
+        <h2 className="pt-4 text-2xl font-semibold tracking-tight">Payments</h2>
+        <p>
+          Pro is paid for through Razorpay. Your card, UPI or bank details go to Razorpay and are never seen or stored by CallFirst.
+          After a successful payment we give you a licence key. It contains the payment reference and an expiry date, and nothing
+          about you or your leads. We do not keep an account or a customer list; the key in your browser is what unlocks Pro.
         </p>
         <h2 className="pt-4 text-2xl font-semibold tracking-tight">Analytics</h2>
         <p>

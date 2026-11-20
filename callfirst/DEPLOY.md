@@ -35,6 +35,24 @@ The competition does not accept the `.vercel.app` address, so you need a domain.
 
 Your live product link is `https://YOUR-DOMAIN`. This is the second link the form asks for.
 
+## Turn on payments (Razorpay)
+
+The site works without this; the Pay button just says payments are not set up. Do this after step 3.
+
+1. Go to https://razorpay.com and create an account. You do not need to finish business verification to start.
+2. In the Razorpay dashboard make sure the switch at the top says **Test mode**.
+3. Open **Account & Settings → API keys → Generate Test Key**. Copy the **Key Id** (starts with `rzp_test_`) and the **Key Secret**. The secret is shown only once, so copy it now.
+4. In Vercel open your project → **Settings → Environment Variables** and add three:
+   - `RAZORPAY_KEY_ID` = the Key Id
+   - `RAZORPAY_KEY_SECRET` = the Key Secret
+   - `LICENSE_SECRET` = any long random text, at least 16 characters. Keep it private.
+5. Go to **Deployments**, open the latest one, click **… → Redeploy**.
+6. Test it: open your site, upload more than 50 leads (or use `/app?upgrade=1`), click **Pay ₹499**, and use Razorpay's test card `4111 1111 1111 1111`, any future date, any 3 digit CVV. When it asks for an OTP, choose the success option. You should get a licence key and every lead unlocks.
+
+Test mode never charges real money, which is right for the submission. Before taking real customers, finish Razorpay's business verification (KYC), generate **Live** keys (they start with `rzp_live_`), and replace the two Razorpay values in Vercel.
+
+Never put the Key Secret in GitHub or share it. It belongs only in Vercel's settings.
+
 ## Optional bonus items
 
 ### Microsoft Clarity (analytics)
@@ -58,3 +76,4 @@ Clarity loads on the home page, blog and privacy page. It is deliberately not lo
 - [ ] **Try with sample leads** shows a ranked list.
 - [ ] `https://YOUR-DOMAIN/sitemap.xml` lists your own domain, not `callfirst.in`.
 - [ ] The GitHub repository is public.
+- [ ] `/app?upgrade=1` opens the payment window, and a test payment unlocks all leads.
